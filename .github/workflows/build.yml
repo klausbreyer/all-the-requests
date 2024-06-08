@@ -1,0 +1,106 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: [1.22.x]
+        os: [linux, windows, darwin]
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Get Tag Name
+        id: get_tag
+        run: echo "RELEASE_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p artifacts
+          go build -o artifacts/all-the-requests-${{ matrix.os }}-${{ matrix.arch }}-${{ env.RELEASE_TAG }} main.go
+          chmod +x artifacts/all-the-requests-${{ matrix.os }}-${{ matrix.arch }}-${{ env.RELEASE_TAG }}
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-the-requests-${{ matrix.os }}-${{ matrix.arch }}-${{ env.RELEASE_TAG }}
+          path: artifacts/all-the-requests-${{ matrix.os }}-${{ matrix.arch }}-${{ env.RELEASE_TAG }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get Tag Name
+        id: get_tag
+        run: echo "RELEASE_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Download artifacts (Linux amd64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-linux-amd64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: Download artifacts (Linux arm64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-linux-arm64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: Download artifacts (Windows amd64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-windows-amd64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: Download artifacts (Windows arm64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-windows-arm64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: Download artifacts (MacOS amd64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-darwin-amd64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: Download artifacts (MacOS arm64)
+        uses: actions/download-artifact@v3
+        with:
+          name: all-the-requests-darwin-arm64-${{ env.RELEASE_TAG }}
+          path: ./artifacts
+
+      - name: List downloaded artifacts
+        run: ls -la ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ./artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
