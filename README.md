@@ -2,6 +2,8 @@
 
 This is a simple HTTP server written in Go that logs all incoming requests with details including timestamp, path, headers, and payload. It's useful for debugging callbacks and webhooks.
 
+![Example](example.png)
+
 ## Features
 
 - Logs the request path, headers, and body.
