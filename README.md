@@ -60,11 +60,18 @@ curl -X POST http://localhost:9090 -d "test payload" -H "Content-Type: text/plai
 The server logs:
 
 ```
-Timestamp: 2023-06-08T15:04:05Z
+--------------------------------------------------
+Timestamp: 2024-06-11T13:52:33+02:00
+Method: POST
 Path: /
 Headers:
-Content-Type: text/plain
+  User-Agent: curl/8.6.0
+  Accept: */*
+  Content-Type: text/plain
+  Content-Length: 12
+--------------------------------------------------
 Payload: test payload
+--------------------------------------------------
 ```
 
 ### Downloads
